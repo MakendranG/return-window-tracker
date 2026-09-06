@@ -74,31 +74,77 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Status → colour + label used for badges throughout the UI.
+# Status → colour + label used for pills throughout the UI.
 STATUS_STYLE = {
-    "SAFE": ("#1a7f37", "SAFE"),
-    "ACT_SOON": ("#bf8700", "ACT SOON"),
-    "EXPIRED": ("#cf222e", "EXPIRED"),
-    "ALREADY_FLAGGED_FOR_RETURN": ("#8250df", "FLAGGED"),
+    "SAFE": ("#1a7f37", "#e7f6ec", "SAFE"),
+    "ACT_SOON": ("#bf8700", "#fff5e0", "ACT SOON"),
+    "EXPIRED": ("#cf222e", "#fdecec", "EXPIRED"),
+    "ALREADY_FLAGGED_FOR_RETURN": ("#8250df", "#f3edfc", "FLAGGED"),
 }
 
 st.markdown(
     """
     <style>
-      .rwt-badge {
-        display:inline-block; padding:2px 10px; border-radius:12px;
-        color:#fff; font-size:0.75rem; font-weight:600; letter-spacing:.3px;
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+      html, body, [class*="css"] { font-family: 'Inter', -apple-system, sans-serif; }
+
+      /* Hide default Streamlit chrome for a cleaner app feel */
+      #MainMenu, footer, header [data-testid="stToolbar"] { visibility: hidden; }
+      .block-container { padding-top: 1.4rem; max-width: 1200px; }
+
+      /* ---- Hero banner ---- */
+      .rwt-hero {
+        background: linear-gradient(135deg, #cf222e 0%, #7d1620 100%);
+        border-radius: 20px; padding: 30px 34px; color: #fff;
+        box-shadow: 0 12px 34px rgba(207,34,46,.28); margin-bottom: 8px;
       }
+      .rwt-hero h1 { margin: 0 0 6px 0; font-size: 2.05rem; font-weight: 800; letter-spacing:-.5px; }
+      .rwt-hero p  { margin: 0; font-size: 1.02rem; opacity: .95; line-height: 1.5; max-width: 760px; }
+      .rwt-hero .rwt-pills { margin-top: 14px; }
+      .rwt-hero .rwt-pill {
+        display:inline-block; background: rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.28);
+        color:#fff; padding:4px 12px; border-radius:999px; font-size:.78rem; font-weight:600;
+        margin-right:8px; margin-top:6px; backdrop-filter: blur(4px);
+      }
+
+      /* ---- Metric tiles ---- */
+      .rwt-tiles { display:flex; gap:14px; flex-wrap:wrap; margin: 18px 0 6px 0; }
+      .rwt-tile {
+        flex:1; min-width:160px; border-radius:16px; padding:18px 20px;
+        background:#fff; border:1px solid #eaecef; box-shadow:0 4px 14px rgba(31,35,40,.06);
+      }
+      .rwt-tile .num { font-size:2.1rem; font-weight:800; line-height:1; }
+      .rwt-tile .lbl { font-size:.82rem; color:#6e7781; margin-top:6px; font-weight:600; text-transform:uppercase; letter-spacing:.4px; }
+      .rwt-tile.t-review { border-top:4px solid #0969da; }
+      .rwt-tile.t-needs  { border-top:4px solid #cf222e; }
+      .rwt-tile.t-auto   { border-top:4px solid #1a7f37; }
+      .rwt-tile.t-none   { border-top:4px solid #8c959f; }
+
+      /* ---- Section headers ---- */
+      .rwt-h { font-size:1.15rem; font-weight:800; margin:22px 0 10px 0; padding-bottom:6px;
+               border-bottom:2px solid #f0f1f3; }
+
+      /* ---- Item cards ---- */
       .rwt-card {
-        border:1px solid rgba(128,128,128,.25); border-radius:14px;
-        padding:16px 18px; margin-bottom:12px; background:rgba(128,128,128,.04);
+        border:1px solid #eaecef; border-radius:16px; padding:16px 18px; margin-bottom:14px;
+        background:#fff; box-shadow:0 3px 12px rgba(31,35,40,.05); transition:transform .12s ease, box-shadow .12s ease;
       }
+      .rwt-card:hover { transform:translateY(-2px); box-shadow:0 8px 22px rgba(31,35,40,.10); }
       .rwt-needs { border-left:6px solid #cf222e; }
       .rwt-auto  { border-left:6px solid #1a7f37; }
       .rwt-none  { border-left:6px solid #8c959f; }
-      .rwt-item-title { font-size:1.05rem; font-weight:700; margin-bottom:2px; }
-      .rwt-meta { color:#6e7781; font-size:0.85rem; margin-bottom:6px; }
-      .rwt-reason { font-size:0.9rem; margin:4px 0 8px 0; }
+      .rwt-item-title { font-size:1.06rem; font-weight:700; margin-bottom:4px; color:#1f2328; }
+      .rwt-meta { color:#6e7781; font-size:0.85rem; margin-bottom:8px; }
+      .rwt-meta b { color:#1f2328; }
+      .rwt-reason { font-size:0.92rem; margin:6px 0 2px 0; color:#3d444d;
+                    background:#f6f8fa; border-radius:8px; padding:8px 10px; }
+      .rwt-badge {
+        display:inline-block; padding:2px 11px; border-radius:999px; font-size:0.72rem;
+        font-weight:700; letter-spacing:.4px; margin-left:6px; vertical-align:middle;
+      }
+      .rwt-new { background:#0969da; color:#fff; padding:1px 8px; border-radius:999px;
+                 font-size:.68rem; font-weight:700; margin-left:6px; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -106,8 +152,8 @@ st.markdown(
 
 
 def badge(status: str) -> str:
-    colour, label = STATUS_STYLE.get(status, ("#57606a", status))
-    return f'<span class="rwt-badge" style="background:{colour}">{label}</span>'
+    fg, bg, label = STATUS_STYLE.get(status, ("#57606a", "#eef0f2", status))
+    return f'<span class="rwt-badge" style="background:{bg};color:{fg}">{label}</span>'
 
 
 def price_str(p) -> str:
@@ -116,15 +162,15 @@ def price_str(p) -> str:
 
 def item_card(it: dict, css_class: str) -> None:
     """Render one purchase as a styled card with optional drafted message."""
-    new_flag = " 🆕" if it.get("seen_before") is False else ""
+    new_flag = '<span class="rwt-new">NEW</span>' if it.get("seen_before") is False else ""
     st.markdown(
         f"""
         <div class="rwt-card {css_class}">
-          <div class="rwt-item-title">{it.get('item','')}{new_flag} &nbsp; {badge(it.get('status',''))}</div>
+          <div class="rwt-item-title">{it.get('item','')} {badge(it.get('status',''))}{new_flag}</div>
           <div class="rwt-meta">
-            {it.get('store','')} · purchased {it.get('purchase_date','')} ·
-            deadline <b>{it.get('deadline','')}</b> ·
-            <b>{it.get('days_left','?')}</b> day(s) left · {price_str(it.get('price'))}
+            🏬 {it.get('store','')} &nbsp;·&nbsp; 🧾 purchased {it.get('purchase_date','')} &nbsp;·&nbsp;
+            ⏰ deadline <b>{it.get('deadline','')}</b> &nbsp;·&nbsp;
+            <b>{it.get('days_left','?')}</b> day(s) left &nbsp;·&nbsp; 💵 {price_str(it.get('price'))}
           </div>
           <div class="rwt-reason">↳ {it.get('escalation_reason','') or ''}</div>
         </div>
@@ -135,6 +181,21 @@ def item_card(it: dict, css_class: str) -> None:
     if draft:
         with st.expander("✉️  View drafted return request (copy & send)"):
             st.code(draft, language="text")
+
+
+def tiles(review: int, needs: int, auto: int, none: int) -> None:
+    """Render the four metric tiles as one styled HTML row."""
+    st.markdown(
+        f"""
+        <div class="rwt-tiles">
+          <div class="rwt-tile t-review"><div class="num">{review}</div><div class="lbl">Reviewed</div></div>
+          <div class="rwt-tile t-needs"><div class="num" style="color:#cf222e">{needs}</div><div class="lbl">Need your decision</div></div>
+          <div class="rwt-tile t-auto"><div class="num" style="color:#1a7f37">{auto}</div><div class="lbl">Auto-handled</div></div>
+          <div class="rwt-tile t-none"><div class="num" style="color:#57606a">{none}</div><div class="lbl">No action</div></div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -186,10 +247,11 @@ if not use_offline:
     if not _shared_creds:
         with st.sidebar.expander("⚙️ Advanced: use my own AWS (temporary session credentials)"):
             st.caption(
-                "Optional. Paste **short-lived STS session credentials** (from "
-                "`aws sts get-session-token` or your SSO 'command line access' "
-                "screen). Used only for this session, never stored. Do NOT paste "
-                "long-lived keys."
+                "Optional. Paste **short-lived STS session credentials** — from "
+                "your **AWS SSO / IAM Identity Center 'command line access'** "
+                "screen, or from `aws sts assume-role`. (Note: `get-session-token` "
+                "fails if you're already on temporary creds, e.g. CloudShell.) "
+                "Used only for this session, never stored. Do NOT paste long-lived keys."
             )
             byo_creds["AWS_ACCESS_KEY_ID"] = st.text_input("AWS_ACCESS_KEY_ID", type="password")
             byo_creds["AWS_SECRET_ACCESS_KEY"] = st.text_input("AWS_SECRET_ACCESS_KEY", type="password")
@@ -209,17 +271,22 @@ st.sidebar.caption(
 # ---------------------------------------------------------------------------
 # Main — header + editable data
 # ---------------------------------------------------------------------------
-st.title("🧾 Return Window Tracker")
 st.markdown(
-    "Never lose money to a missed return window again. This agent tracks every "
-    "purchase's deadline, **auto-drafts** the routine return requests, and only "
-    "**surfaces the ones that need your decision** — running quietly in the "
-    "background like a good Everyday Agent should."
-)
-st.caption(
-    "▶️ No login and no AWS keys required — the default **Offline preview** runs "
-    "the full deterministic engine right here. Choose **Live — Amazon Bedrock** "
-    "in the sidebar for AI-drafted messages. All data is synthetic."
+    """
+    <div class="rwt-hero">
+      <h1>🧾 Return Window Tracker</h1>
+      <p>Never lose money to a missed return window again. This Everyday Agent tracks every
+      purchase's deadline, <b>auto-drafts</b> the routine return requests, and only
+      <b>surfaces the ones that need your decision</b> — running quietly in the background.</p>
+      <div class="rwt-pills">
+        <span class="rwt-pill">⚡ No login required</span>
+        <span class="rwt-pill">🔌 Works offline — no AWS keys</span>
+        <span class="rwt-pill">🤖 Built with Strands Agents SDK</span>
+        <span class="rwt-pill">☁️ Amazon Bedrock</span>
+      </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
 )
 
 with st.expander("📋 Purchases (editable)", expanded=not st.session_state.get("result")):
@@ -305,38 +372,46 @@ if result:
     auto = [it for it in items if it.get("autonomy") == AUTONOMY_AUTO]
     none = [it for it in items if it.get("autonomy") == AUTONOMY_NONE]
 
-    # Metric cards
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Purchases reviewed", len(items))
-    c2.metric("⚠️ Need your decision", len(needs_you))
-    c3.metric("✅ Auto-handled", len(auto))
-    c4.metric("ℹ️ No action", len(none))
+    # Metric tiles (custom styled)
+    tiles(len(items), len(needs_you), len(auto), len(none))
 
-    st.markdown("### 🗒️ Daily digest")
+    st.markdown('<div class="rwt-h">🗒️ Daily digest</div>', unsafe_allow_html=True)
     st.info(result.get("digest", "").strip() or "No digest produced.")
 
     left, right = st.columns(2)
     with left:
-        st.markdown(f"### ⚠️ Needs you — {len(needs_you)} decision(s)")
+        st.markdown(
+            f'<div class="rwt-h" style="border-color:#f7c5c9">⚠️ Needs you — {len(needs_you)} decision(s)</div>',
+            unsafe_allow_html=True,
+        )
         if not needs_you:
             st.success("Nothing needs you right now. The agent has it covered. ✅")
         for it in needs_you:
             item_card(it, "rwt-needs")
 
     with right:
-        st.markdown(f"### ✅ Auto-handled — {len(auto)} draft(s) ready")
+        st.markdown(
+            f'<div class="rwt-h" style="border-color:#bde5c8">✅ Auto-handled — {len(auto)} draft(s) ready</div>',
+            unsafe_allow_html=True,
+        )
         if not auto:
             st.caption("No routine returns to auto-handle.")
         for it in auto:
             item_card(it, "rwt-auto")
 
     if none:
-        st.markdown(f"### ℹ️ No action needed — {len(none)}")
+        st.markdown(
+            f'<div class="rwt-h">ℹ️ No action needed — {len(none)}</div>',
+            unsafe_allow_html=True,
+        )
         for it in none:
             item_card(it, "rwt-none")
 
     # Structured output + download
-    st.markdown("### 🧩 Structured output (typed via Strands structured output)")
+    st.markdown(
+        '<div class="rwt-h">🧩 Structured output (typed via Strands structured output)</div>',
+        unsafe_allow_html=True,
+    )
     st.json(result, expanded=False)
     st.download_button(
         "⬇️ Download result JSON",
