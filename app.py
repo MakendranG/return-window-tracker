@@ -244,19 +244,24 @@ if not use_offline:
         placeholder="global.anthropic.claude-sonnet-4-6",
         help="Leave blank to use the Strands default (Amazon Bedrock Claude Sonnet).",
     )
-    if not _shared_creds:
-        with st.sidebar.expander("⚙️ Advanced: use my own AWS (temporary session credentials)"):
+    with st.sidebar.expander("🔑 Enter your AWS credentials (not stored)", expanded=not _shared_creds):
+        st.caption(
+            "Paste **short-lived STS session credentials** — from your AWS SSO / "
+            "IAM Identity Center 'command line access' screen, or `aws sts "
+            "assume-role`. (`get-session-token` fails on temporary/CloudShell "
+            "creds.) These are held only in memory for this single run, are "
+            "**never written to disk or the environment**, and are cleared when "
+            "you close the tab. Do NOT paste long-lived keys."
+        )
+        byo_creds["aws_access_key_id"] = st.text_input("Access key ID", type="password")
+        byo_creds["aws_secret_access_key"] = st.text_input("Secret access key", type="password")
+        byo_creds["aws_session_token"] = st.text_input("Session token", type="password")
+        byo_creds["region_name"] = st.text_input("Region", value=os.environ.get("AWS_REGION", "us-west-2"))
+        if _shared_creds:
             st.caption(
-                "Optional. Paste **short-lived STS session credentials** — from "
-                "your **AWS SSO / IAM Identity Center 'command line access'** "
-                "screen, or from `aws sts assume-role`. (Note: `get-session-token` "
-                "fails if you're already on temporary creds, e.g. CloudShell.) "
-                "Used only for this session, never stored. Do NOT paste long-lived keys."
+                "ℹ️ Leave blank to use this deployment's own key. Fill these in to "
+                "run Live mode on **your** AWS account instead."
             )
-            byo_creds["AWS_ACCESS_KEY_ID"] = st.text_input("AWS_ACCESS_KEY_ID", type="password")
-            byo_creds["AWS_SECRET_ACCESS_KEY"] = st.text_input("AWS_SECRET_ACCESS_KEY", type="password")
-            byo_creds["AWS_SESSION_TOKEN"] = st.text_input("AWS_SESSION_TOKEN", type="password")
-            byo_creds["AWS_REGION"] = st.text_input("AWS_REGION", value=os.environ.get("AWS_REGION", "us-west-2"))
 
 st.sidebar.markdown("### 3. Run")
 run_clicked = st.sidebar.button("🤖 Run the agent", type="primary", use_container_width=True)
@@ -327,15 +332,15 @@ if run_clicked:
                 st.session_state.result = run_tracker_offline(cleaned, state_path=None)
                 st.session_state.result_mode = "offline"
             else:
-                # Apply any per-session bring-your-own credentials (never stored).
-                for k, v in byo_creds.items():
-                    if v:
-                        os.environ[k] = v
-                if byo_creds.get("AWS_REGION"):
-                    os.environ.setdefault("AWS_DEFAULT_REGION", byo_creds["AWS_REGION"])
+                # Pass any user-entered credentials to this single run only.
+                # They are NOT written to os.environ or disk. If left blank, the
+                # deployment's default credential chain is used.
+                creds = None
+                if byo_creds.get("aws_access_key_id") and byo_creds.get("aws_secret_access_key"):
+                    creds = {k: v for k, v in byo_creds.items() if v}
                 # state_path=None here so the hosted demo is stateless & repeatable.
                 st.session_state.result = run_tracker(
-                    cleaned, model=model_id or None, state_path=None
+                    cleaned, model=model_id or None, state_path=None, creds=creds
                 )
                 st.session_state.result_mode = "live"
         except Exception as exc:  # noqa: BLE001

@@ -333,14 +333,19 @@ that needed a draft; otherwise leave it empty.
 """
 
 
-def build_agent(model: str | None = None) -> Agent:
+def build_agent(model: str | None = None, creds: dict[str, str] | None = None) -> Agent:
     """
     Construct the Strands `return_tracker_agent`.
 
     Args:
         model: Optional model ID string. If None, the Strands SDK default
-            (Amazon Bedrock Claude Sonnet) is used. Credentials come only from
-            environment variables — no secrets are hardcoded.
+            (Amazon Bedrock Claude Sonnet) is used.
+        creds: Optional dict of AWS credentials to use for THIS agent only
+            (keys: aws_access_key_id, aws_secret_access_key, aws_session_token,
+            region_name). When provided, a scoped boto3 session is created and
+            passed to the Bedrock model — the credentials are never written to
+            os.environ or disk. When None, the default credential chain is used
+            (env / shared config / IAM role).
     """
     kwargs: dict[str, Any] = {
         # Two deterministic tools: deadline math + autonomy/escalation policy.
@@ -351,8 +356,26 @@ def build_agent(model: str | None = None) -> Agent:
         # raw agent loop if desired.
         "callback_handler": None,
     }
-    if model:
+
+    if creds and creds.get("aws_access_key_id") and creds.get("aws_secret_access_key"):
+        # Use the provided credentials ONLY for this agent, via an in-memory
+        # boto3 session. Nothing is persisted to os.environ or disk.
+        import boto3
+        from strands.models import BedrockModel
+
+        session = boto3.Session(
+            aws_access_key_id=creds["aws_access_key_id"],
+            aws_secret_access_key=creds["aws_secret_access_key"],
+            aws_session_token=creds.get("aws_session_token") or None,
+            region_name=creds.get("region_name") or "us-west-2",
+        )
+        kwargs["model"] = BedrockModel(
+            model_id=model or "global.anthropic.claude-sonnet-4-6",
+            boto_session=session,
+        )
+    elif model:
         kwargs["model"] = model
+
     return Agent(**kwargs)
 
 
@@ -394,6 +417,7 @@ def run_tracker(
     purchases: list[dict[str, Any]],
     model: str | None = None,
     state_path: str | None = None,
+    creds: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     """
     Run the full pipeline: deterministic tools -> LLM drafting/digest -> structured
@@ -406,11 +430,13 @@ def run_tracker(
             is tagged as "first_seen_run" (new since last run) or "carried_over",
             so the digest can behave like a background agent that only re-nudges
             when something is genuinely new or newly urgent.
+        creds: Optional per-call AWS credentials (used only for this run, never
+            stored). See build_agent.
 
     Returns a dict with keys "digest", "needs_you_count", "auto_handled_count",
     and "items". Raises RuntimeError if the model output cannot be parsed.
     """
-    agent = build_agent(model=model)
+    agent = build_agent(model=model, creds=creds)
 
     prior = load_state(state_path)  # {item_key: {"last_status": ..., "last_autonomy": ...}}
 
