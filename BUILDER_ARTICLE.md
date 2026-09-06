@@ -1,4 +1,8 @@
-# 🧾 Agents for Humans: Building a Return Window Tracker That Quietly Saves You Money
+<!--
+  NOTE: The article title goes in the Builder Center "Title" field (see
+  BUILDER_ARTICLE_FIELDS.md), NOT here. Do not add an H1 to the body or the
+  title will appear twice. Paste everything below into the Body field.
+-->
 
 ![Strands Agents](https://img.shields.io/badge/Built_with-Strands_Agents_SDK-cf222e)
 ![Amazon Bedrock](https://img.shields.io/badge/Amazon-Bedrock-232f3e)

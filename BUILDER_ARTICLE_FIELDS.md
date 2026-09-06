@@ -37,3 +37,36 @@ Keep it text-light (AWS recommends against text-heavy cover images).
 
 Paste the full contents of [`BUILDER_ARTICLE.md`](./BUILDER_ARTICLE.md) into the
 Body field. It is already valid Markdown and renders directly in the editor.
+
+> **Important:** put the editor in **Markdown mode** before pasting. If you paste
+> into the rich "Paragraph"/WYSIWYG mode, it inserts blank lines between table
+> rows and **breaks the tables**. In Markdown mode the tables render correctly.
+
+## Table-free fallback (use if the editor keeps breaking tables)
+
+If your editor mangles Markdown tables no matter what, replace the two tables in
+the body with these bullet lists — bullets survive any paste mode.
+
+Replace the **links table** at the top with:
+
+```
+**🚀 Live demo:** https://return-window-tracker.streamlit.app
+**🌐 Project page:** https://makendrang.github.io/return-window-tracker/
+**💻 Source (MIT):** https://github.com/MakendranG/return-window-tracker
+**🏷️ Track:** Agents for Humans → Everyday Agents
+```
+
+Replace the **layer-split table** with:
+
+```
+- 🔢 **Deadline math** — `check_return_deadlines` (Python @tool): computes deadline, days left, and status.
+- ⚖️ **Escalation policy** — `decide_autonomy` (Python @tool): AUTO_HANDLED vs NEEDS_YOU, deterministic and auditable.
+- ✍️ **Wording** — the LLM on Amazon Bedrock: return-request messages + human-readable digest.
+```
+
+Replace the **modes table** with:
+
+```
+- 🔌 **Offline preview (default)** — no AWS needed; full deterministic engine + template messages.
+- 🟢 **Live — Amazon Bedrock** — Bedrock AI-drafts the messages and digest.
+```
