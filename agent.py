@@ -462,3 +462,126 @@ def run_tracker(
 
     save_state(state_path, updated_state)
     return parsed
+
+
+# ---------------------------------------------------------------------------
+# OFFLINE / KEYLESS PIPELINE
+# ---------------------------------------------------------------------------
+# Runs the FULL deterministic pipeline (both @tools) with ZERO AWS/Bedrock, and
+# substitutes template-generated return messages + a template digest for the
+# LLM-drafted ones. This lets the public try the visual demo with no credentials
+# and no login. The "smart" part of the agent — the deadline math and the
+# AUTO_HANDLED-vs-NEEDS_YOU escalation policy — is identical to the live path;
+# only the natural-language wording is templated instead of model-generated.
+def _unwrap(tool_obj):
+    """Return the plain Python function underneath a Strands @tool object."""
+    return getattr(tool_obj, "__wrapped__", tool_obj)
+
+
+def _template_draft(it: dict[str, Any]) -> str:
+    """Generate a polite, ready-to-send return-request message without an LLM."""
+    item = it.get("item", "the item")
+    store = it.get("store", "there")
+    pdate = it.get("purchase_date", "")
+    deadline = it.get("deadline", "")
+    reason = (it.get("reason_for_potential_return") or "").strip()
+    reason_line = f" The reason for my return is: {reason}" if reason else ""
+    return (
+        f"Subject: Return Request - {item}\n\n"
+        f"Hello {store} team,\n\n"
+        f"I would like to initiate a return for the {item} I purchased on {pdate}. "
+        f"I understand the return window closes on {deadline}, so I am reaching out "
+        f"promptly to complete this in time.{reason_line} Could you please let me "
+        f"know the next steps to process this return?\n\n"
+        f"Thank you for your assistance."
+    )
+
+
+def _template_digest(items: list[dict[str, Any]], needs_you: int, auto: int, today: str) -> str:
+    """Build a readable prioritized digest without an LLM."""
+    lines = [f"RETURN WINDOW TRACKER - Daily Digest ({today})",
+             f"{needs_you} item(s) need your decision - {auto} auto-handled and ready.", ""]
+    ny = [it for it in items if it.get("autonomy") == AUTONOMY_NEEDS_YOU]
+    ah = [it for it in items if it.get("autonomy") == AUTONOMY_AUTO]
+    none = [it for it in items if it.get("autonomy") == AUTONOMY_NONE]
+    if ny:
+        lines.append("NEEDS YOU (act in urgency order):")
+        for it in ny:
+            lines.append(
+                f"  - {it['item']} ({it['store']}) - {it['days_left']} day(s) left "
+                f"- {it.get('escalation_reason','')}"
+            )
+        lines.append("")
+    if ah:
+        lines.append("AUTO-HANDLED (drafts ready to send):")
+        for it in ah:
+            lines.append(f"  - {it['item']} ({it['store']}) - deadline {it['deadline']}")
+        lines.append("")
+    if none:
+        lines.append("NO ACTION NEEDED:")
+        for it in none:
+            lines.append(f"  - {it['item']} ({it['store']}) - {it['status']}, {it['days_left']} day(s) left")
+    return "\n".join(lines)
+
+
+def run_tracker_offline(
+    purchases: list[dict[str, Any]],
+    state_path: str | None = None,
+) -> dict[str, Any]:
+    """
+    Keyless pipeline: runs check_return_deadlines + decide_autonomy directly and
+    fills draft_message/digest from templates. Returns the same dict shape as
+    run_tracker (digest, needs_you_count, auto_handled_count, items).
+    """
+    checked = _unwrap(check_return_deadlines)(purchases)
+    today_str = checked.get("today", date.today().isoformat())
+    decided = _unwrap(decide_autonomy)(checked["items"])
+
+    items_out: list[dict[str, Any]] = []
+    for it in decided["items"]:
+        rec = {
+            "item": it.get("item"),
+            "store": it.get("store"),
+            "purchase_date": it.get("purchase_date"),
+            "deadline": it.get("deadline"),
+            "days_left": it.get("days_left"),
+            "price": it.get("price"),
+            "status": it.get("status"),
+            "autonomy": it.get("autonomy"),
+            "escalation_reason": it.get("escalation_reason", ""),
+            "draft_message": _template_draft(it) if it.get("needs_draft") else "",
+        }
+        items_out.append(rec)
+
+    result = {
+        "digest": _template_digest(
+            items_out, decided["needs_you_count"], decided["auto_handled_count"], today_str
+        ),
+        "needs_you_count": decided["needs_you_count"],
+        "auto_handled_count": decided["auto_handled_count"],
+        "items": items_out,
+    }
+
+    # Reuse the same background-memory annotation + persistence as the live path.
+    prior = load_state(state_path)
+    updated_state: dict[str, Any] = {}
+    for item in result["items"]:
+        key = _item_key(item)
+        prev = prior.get(key)
+        if prev is None:
+            item["seen_before"] = False
+            item["change_note"] = "New since last run."
+        else:
+            item["seen_before"] = True
+            item["change_note"] = (
+                "Carried over from a previous run (already known)."
+                if prev.get("last_status") == item.get("status")
+                else f"Status changed since last run: {prev.get('last_status')} -> {item.get('status')}."
+            )
+        updated_state[key] = {
+            "last_status": item.get("status"),
+            "last_autonomy": item.get("autonomy"),
+            "last_seen": today_str,
+        }
+    save_state(state_path, updated_state)
+    return result

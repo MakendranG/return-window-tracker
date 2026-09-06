@@ -120,10 +120,16 @@ streamlit run app.py
 
 Then open the local URL Streamlit prints. Edit the purchases table, click
 **Run the agent**, and see the prioritized digest with the "needs you" vs.
-"auto-handled" split and the drafted return messages. The same app is deployed
-publicly on Streamlit Community Cloud (link at the top). Deployment steps for the
-live demo, the GitHub Pages landing page, and the optional Bedrock AgentCore
-Runtime are in [DEPLOYMENT.md](./DEPLOYMENT.md).
+"auto-handled" split and the drafted return messages.
+
+The UI has two modes: **Offline preview** (default — the full deterministic
+engine runs with template-written messages, needing **no AWS, no keys, and no
+login**, so anyone can try it) and **Live — Amazon Bedrock** (AI-drafts the
+messages and digest; uses credentials from the environment/Streamlit secrets, or
+optional per-session STS credentials the visitor can paste). The same app is
+deployed publicly on Streamlit Community Cloud (link at the top). Deployment
+steps for the live demo, the GitHub Pages landing page, and the optional Bedrock
+AgentCore Runtime are in [DEPLOYMENT.md](./DEPLOYMENT.md).
 
 ## Setup (from a cold start)
 

@@ -31,7 +31,24 @@ This hosts `app.py` as a running Python app so visitors can interact with the St
    > ⚠️ **Do NOT choose Python 3.13 or 3.14.** Some dependencies do not yet
    > build/resolve cleanly on those versions. Use **3.12**.
 
-### Secrets (AWS credentials for Bedrock)
+### App modes (important — the public needs no credentials)
+
+The app has two modes, selectable in the sidebar:
+
+- **Offline preview (default):** runs the full deterministic engine
+  (`check_return_deadlines` + `decide_autonomy`) with template-generated return
+  messages and digest. **No AWS, no keys, no login** — perfect for public
+  visitors and judges. This is the default whenever no shared key is configured.
+- **Live — Amazon Bedrock:** uses Bedrock (via Strands) to AI-draft the return
+  messages and digest. Requires credentials (below). If a live call fails, the
+  app automatically falls back to Offline so the demo never breaks.
+
+Visitors can also open **"⚙️ Advanced: use my own AWS (temporary session
+credentials)"** and paste short-lived STS credentials for their own account —
+used only for that session and never stored. So configuring the Secrets below is
+**optional**: it just makes Live mode the default for everyone.
+
+### Secrets (optional — only needed to make Live mode the default for visitors)
 Still in **Advanced settings**, paste the following into the **Secrets** box.
 Secrets use **TOML** format. Replace every placeholder with your own values:
 

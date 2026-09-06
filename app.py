@@ -60,6 +60,7 @@ from agent import (  # noqa: E402  (import after env is populated)
     AUTONOMY_NEEDS_YOU,
     AUTONOMY_NONE,
     run_tracker,
+    run_tracker_offline,
 )
 from generate_sample_data import build_purchases  # noqa: E402
 
@@ -153,21 +154,56 @@ if st.sidebar.button("↻ Load fresh sample data"):
     st.session_state.purchases_df = pd.DataFrame(build_purchases())
     st.session_state.pop("result", None)
 
-st.sidebar.markdown("### 2. Model (optional)")
-model_id = st.sidebar.text_input(
-    "Model ID override",
-    value=os.environ.get("STRANDS_MODEL_ID", ""),
-    placeholder="global.anthropic.claude-sonnet-4-6",
-    help="Leave blank to use the Strands default (Amazon Bedrock Claude Sonnet).",
+st.sidebar.markdown("### 2. Mode")
+
+# Detect whether a shared/deployer Bedrock key is already available in the env.
+_shared_creds = bool(
+    os.environ.get("AWS_ACCESS_KEY_ID") or os.environ.get("AWS_BEARER_TOKEN_BEDROCK")
 )
+
+mode = st.sidebar.radio(
+    "How should the agent run?",
+    options=["Offline preview (no AWS needed)", "Live — Amazon Bedrock"],
+    index=1 if _shared_creds else 0,
+    help=(
+        "Offline runs the full deterministic pipeline (deadline math + "
+        "auto-handled vs needs-you decisions) with template-written messages — "
+        "no credentials, no login. Live uses Amazon Bedrock to AI-draft the "
+        "return messages and digest."
+    ),
+)
+use_offline = mode.startswith("Offline")
+
+model_id = ""
+byo_creds: dict[str, str] = {}
+if not use_offline:
+    model_id = st.sidebar.text_input(
+        "Model ID override (optional)",
+        value=os.environ.get("STRANDS_MODEL_ID", ""),
+        placeholder="global.anthropic.claude-sonnet-4-6",
+        help="Leave blank to use the Strands default (Amazon Bedrock Claude Sonnet).",
+    )
+    if not _shared_creds:
+        with st.sidebar.expander("⚙️ Advanced: use my own AWS (temporary session credentials)"):
+            st.caption(
+                "Optional. Paste **short-lived STS session credentials** (from "
+                "`aws sts get-session-token` or your SSO 'command line access' "
+                "screen). Used only for this session, never stored. Do NOT paste "
+                "long-lived keys."
+            )
+            byo_creds["AWS_ACCESS_KEY_ID"] = st.text_input("AWS_ACCESS_KEY_ID", type="password")
+            byo_creds["AWS_SECRET_ACCESS_KEY"] = st.text_input("AWS_SECRET_ACCESS_KEY", type="password")
+            byo_creds["AWS_SESSION_TOKEN"] = st.text_input("AWS_SESSION_TOKEN", type="password")
+            byo_creds["AWS_REGION"] = st.text_input("AWS_REGION", value=os.environ.get("AWS_REGION", "us-west-2"))
 
 st.sidebar.markdown("### 3. Run")
 run_clicked = st.sidebar.button("🤖 Run the agent", type="primary", use_container_width=True)
 
 st.sidebar.markdown("---")
 st.sidebar.caption(
-    "Credentials are read from the environment only (AWS creds / Bedrock). "
-    "No secrets are stored in the app. All data shown is synthetic."
+    "No login required. Offline mode needs no AWS at all. Any credentials you "
+    "enter are used only for the current session and never stored. "
+    "All data shown is synthetic."
 )
 
 # ---------------------------------------------------------------------------
@@ -179,6 +215,11 @@ st.markdown(
     "purchase's deadline, **auto-drafts** the routine return requests, and only "
     "**surfaces the ones that need your decision** — running quietly in the "
     "background like a good Everyday Agent should."
+)
+st.caption(
+    "▶️ No login and no AWS keys required — the default **Offline preview** runs "
+    "the full deterministic engine right here. Choose **Live — Amazon Bedrock** "
+    "in the sidebar for AI-drafted messages. All data is synthetic."
 )
 
 with st.expander("📋 Purchases (editable)", expanded=not st.session_state.get("result")):
@@ -214,22 +255,51 @@ if run_clicked:
 
     with st.spinner("Agent is checking deadlines, deciding what needs you, and drafting messages…"):
         try:
-            # state_path=None here so the hosted demo is stateless & repeatable.
-            st.session_state.result = run_tracker(
-                cleaned, model=model_id or None, state_path=None
-            )
+            if use_offline:
+                # Keyless path: full deterministic pipeline + template drafting.
+                st.session_state.result = run_tracker_offline(cleaned, state_path=None)
+                st.session_state.result_mode = "offline"
+            else:
+                # Apply any per-session bring-your-own credentials (never stored).
+                for k, v in byo_creds.items():
+                    if v:
+                        os.environ[k] = v
+                if byo_creds.get("AWS_REGION"):
+                    os.environ.setdefault("AWS_DEFAULT_REGION", byo_creds["AWS_REGION"])
+                # state_path=None here so the hosted demo is stateless & repeatable.
+                st.session_state.result = run_tracker(
+                    cleaned, model=model_id or None, state_path=None
+                )
+                st.session_state.result_mode = "live"
         except Exception as exc:  # noqa: BLE001
-            st.session_state.result = None
-            st.error(
-                "The agent could not run. This usually means AWS Bedrock "
-                f"credentials/model access aren't configured.\n\nDetails: {exc}"
+            st.warning(
+                "Couldn't reach Amazon Bedrock (missing/invalid credentials or "
+                "model access). Falling back to **Offline preview** so you can "
+                "still see the full demo."
             )
+            try:
+                st.session_state.result = run_tracker_offline(cleaned, state_path=None)
+                st.session_state.result_mode = "offline"
+            except Exception as exc2:  # noqa: BLE001
+                st.session_state.result = None
+                st.error(f"The agent could not run at all.\n\nDetails: {exc2}")
 
 # ---------------------------------------------------------------------------
 # Results
 # ---------------------------------------------------------------------------
 result = st.session_state.get("result")
 if result:
+    if st.session_state.get("result_mode") == "offline":
+        st.info(
+            "🔌 **Offline preview** — deterministic deadline math and the "
+            "auto-handled vs. needs-you decisions are fully live; the return "
+            "messages and digest are template-generated. Switch to **Live — "
+            "Amazon Bedrock** in the sidebar for AI-drafted wording. No login "
+            "required either way."
+        )
+    else:
+        st.success("🟢 **Live** — return messages and digest drafted by Amazon Bedrock via Strands.")
+
     items = result.get("items", [])
     needs_you = [it for it in items if it.get("autonomy") == AUTONOMY_NEEDS_YOU]
     auto = [it for it in items if it.get("autonomy") == AUTONOMY_AUTO]
