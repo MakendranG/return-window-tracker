@@ -1,5 +1,6 @@
 # Environment / secrets
 .env
+.streamlit/secrets.toml
 
 # Runtime state (background-memory file regenerated on each run)
 state.json

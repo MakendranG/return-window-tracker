@@ -1,0 +1,9 @@
+# Dependencies for the Bedrock AgentCore Runtime container.
+# (The Streamlit UI deps are intentionally excluded to keep the runtime lean.)
+strands-agents>=1.0.0
+strands-agents-tools>=0.2.0
+pydantic>=2.0.0
+bedrock-agentcore
+# Optional observability (uncomment to emit traces/metrics to CloudWatch):
+# aws-opentelemetry-distro>=0.10.1
+# boto3
