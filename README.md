@@ -238,6 +238,15 @@ items, prices, and reasons are fictional and generated for demonstration only.
 Dates are computed relative to "today" at generation time so the demo always
 shows a realistic mix of safe, urgent, expired, and needs-you items.
 
+## Development & AI assistance disclosure
+
+This project was newly created during the Agents for Humans submission period. It
+was written with the help of an AI coding assistant (used for boilerplate, code,
+tests, and documentation), which the hackathon rules explicitly permit. No
+pre-existing or previously-built project was reused — all code here was produced
+during the submission window. Standard open-source libraries and frameworks
+(Strands Agents SDK, Streamlit, Pydantic, boto3) are used as dependencies.
+
 ## License
 
 MIT — see [LICENSE](./LICENSE).

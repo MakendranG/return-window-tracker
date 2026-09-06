@@ -94,6 +94,12 @@ future?" — get that wrong and you lose money. So:
 
 - Real receipt/email ingestion, calendar reminders, and one-click return filing.
 
+## 🛠️ Disclosure
+
+Newly built during the submission period. Developed with the help of an AI coding
+assistant (permitted by the rules) — no pre-existing project was reused. All data
+shown is synthetic.
+
 **Built With: Strands Agents SDK** on **Amazon Bedrock** (with a Bedrock
 AgentCore Runtime entrypoint). All demo data is synthetic.
 ```

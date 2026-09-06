@@ -8,6 +8,17 @@ The diagram below maps to the five elements judges look for: **user
 input/interface**, **Strands agent + agentic loop**, **tools & integrations**,
 **AWS services**, and **output**.
 
+| Required element | In this project |
+|---|---|
+| **User input / interface** | Streamlit web UI, CLI (`main.py`), and a Bedrock AgentCore HTTP API — user supplies a list of purchases |
+| **Strands Agents (agentic loop)** | `return_tracker_agent` — model reasoning → tool calls → drafting → response |
+| **Tools & integrations** | Two deterministic `@tool` functions (`check_return_deadlines`, `decide_autonomy`); `state.json` background memory; `sample_data/purchases.json` |
+| **AWS services used** | **Amazon Bedrock** (Claude Sonnet) for reasoning + drafting; optional **Bedrock AgentCore Runtime** for hosting |
+| **Output** | Prioritized digest (NEEDS YOU → AUTO-HANDLED → no action) + typed structured JSON |
+
+> A rendered image of this diagram is at [`docs/architecture.png`](./docs/architecture.png)
+> (Graphviz source: [`docs/architecture.dot`](./docs/architecture.dot)).
+
 ```mermaid
 flowchart TB
     subgraph UI["1 · User Input / Interface"]
