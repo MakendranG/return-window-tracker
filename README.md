@@ -7,7 +7,12 @@ money to a missed return window again.
 
 > Hackathon: **Agents for Humans** — Everyday Agents track.
 > **Built With: Strands Agents SDK** (on Amazon Bedrock).
-> Repository: https://github.com/MakendranG/return-window-tracker
+>
+> - 🚀 **Live demo (Streamlit):** https://return-window-tracker.streamlit.app
+> - 🌐 **Landing page (GitHub Pages):** https://makendrang.github.io/return-window-tracker/
+> - 💻 **Source:** https://github.com/MakendranG/return-window-tracker
+> - 🖥️ **Interfaces:** Streamlit web UI (`app.py`), CLI (`main.py`), and a Bedrock
+>   AgentCore Runtime entrypoint (`agentcore_app.py`). See [DEPLOYMENT.md](./DEPLOYMENT.md).
 
 ## The problem (in plain language)
 
@@ -87,17 +92,38 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for the full Mermaid diagram and flow.
 ```
 return-window-tracker/
 ├── agent.py                  # Strands agent + 2 deterministic @tools + Pydantic schema
+├── app.py                    # Streamlit web UI (visual demo)
+├── agentcore_app.py          # Amazon Bedrock AgentCore Runtime entrypoint (/invocations, /ping)
 ├── main.py                   # CLI entry point (loads data, runs agent, prints digest)
 ├── generate_sample_data.py   # Regenerates sample_data/purchases.json with relative dates
 ├── sample_data/
 │   └── purchases.json        # 13 synthetic purchases across every status & autonomy case
+├── docs/
+│   └── index.html            # GitHub Pages landing page (static)
 ├── state.json                # Background memory (auto-created at runtime; git-ignored)
-├── requirements.txt
+├── requirements.txt          # App + CLI + UI dependencies
+├── requirements-agentcore.txt# Lean deps for the AgentCore runtime container
+├── .streamlit/config.toml    # Streamlit theme
 ├── .env.example
 ├── ARCHITECTURE.md
+├── DEPLOYMENT.md             # Streamlit Cloud + GitHub Pages + AgentCore steps
 ├── LICENSE                   # MIT
 └── .gitignore
 ```
+
+## Run the web UI (Streamlit)
+
+```bash
+pip install -r requirements.txt
+streamlit run app.py
+```
+
+Then open the local URL Streamlit prints. Edit the purchases table, click
+**Run the agent**, and see the prioritized digest with the "needs you" vs.
+"auto-handled" split and the drafted return messages. The same app is deployed
+publicly on Streamlit Community Cloud (link at the top). Deployment steps for the
+live demo, the GitHub Pages landing page, and the optional Bedrock AgentCore
+Runtime are in [DEPLOYMENT.md](./DEPLOYMENT.md).
 
 ## Setup (from a cold start)
 
