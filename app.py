@@ -433,6 +433,6 @@ else:
 st.markdown("---")
 st.caption(
     "Built With: Strands Agents SDK · Amazon Bedrock · "
-    "[Source on GitHub](https://github.com/MakendranG/return-window-tracker) · "
+    "[Project page](https://makendrang.github.io/return-window-tracker/) · "
     "All data is synthetic sample data."
 )
