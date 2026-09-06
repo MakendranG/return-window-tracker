@@ -1,0 +1,44 @@
+digraph ReturnWindowTracker {
+  rankdir=TB;
+  bgcolor="white";
+  labelloc="t";
+  fontname="Helvetica";
+  fontsize=20;
+  label="Return Window Tracker — Architecture\n(Agents for Humans · Everyday Agents · Built with Strands Agents SDK on Amazon Bedrock)";
+  node [fontname="Helvetica", fontsize=12, style="filled", color="#d0d7de", penwidth=1.2];
+  edge [fontname="Helvetica", fontsize=10, color="#57606a"];
+
+  /* 1. User interface */
+  ui [label="1 · User Interface\nStreamlit UI / CLI / AgentCore API\n(purchases in)", shape=box, style="rounded,filled", fillcolor="#eef4ff", color="#0969da"];
+
+  /* 2. Strands agent cluster */
+  subgraph cluster_agent {
+    label="2 · Strands Agent  (return_tracker_agent — agentic loop)";
+    fontname="Helvetica"; fontsize=13; style="rounded,filled"; fillcolor="#fbfbfd"; color="#8250df"; penwidth=1.6;
+
+    reason [label="Model reasoning\n(Amazon Bedrock — Claude Sonnet)", shape=box, style="rounded,filled", fillcolor="#f3edfc", color="#8250df"];
+    tool1  [label="3 · @tool check_return_deadlines\nDETERMINISTIC\ndeadline · days_left · status", shape=box, style="filled", fillcolor="#e7f6ec", color="#1a7f37"];
+    tool2  [label="3 · @tool decide_autonomy\nDETERMINISTIC\nAUTO_HANDLED vs NEEDS_YOU", shape=box, style="filled", fillcolor="#e7f6ec", color="#1a7f37"];
+    draft  [label="LLM drafting layer\nreturn messages + digest", shape=box, style="rounded,filled", fillcolor="#f3edfc", color="#8250df"];
+    struct [label="Strands structured_output\n→ typed TrackerResult (Pydantic)", shape=box, style="rounded,filled", fillcolor="#fff5e0", color="#bf8700"];
+
+    reason -> tool1 -> tool2 -> draft -> struct;
+  }
+
+  /* 4. AWS services */
+  bedrock [label="4 · Amazon Bedrock\n(foundation model runtime)", shape=box, style="rounded,filled", fillcolor="#fff3e0", color="#ff9900"];
+
+  /* Background memory */
+  mem [label="Background memory\nstate.json\n(new vs carried-over)", shape=cylinder, style="filled", fillcolor="#f6f8fa", color="#57606a"];
+
+  /* 5. Output */
+  out [label="5 · Output\nPrioritized digest\n(NEEDS YOU → AUTO-HANDLED → no action)\n+ structured JSON", shape=box, style="rounded,filled", fillcolor="#eef4ff", color="#0969da"];
+
+  /* Edges between groups */
+  ui -> reason [label="purchases (JSON)"];
+  reason -> bedrock [label="invoke model", style=dashed, dir=both];
+  draft -> bedrock [style=dashed, dir=both];
+  struct -> out;
+  struct -> mem [label="save", style=dashed];
+  mem -> reason [label="prior run", style=dashed];
+}
