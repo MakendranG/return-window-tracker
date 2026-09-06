@@ -1,0 +1,106 @@
+[
+  {
+    "item": "Wireless Noise-Cancelling Headphones",
+    "store": "SoundHub",
+    "purchase_date": "2026-09-04",
+    "return_window_days": 30,
+    "price": 199.99,
+    "reason_for_potential_return": ""
+  },
+  {
+    "item": "Cast-Iron Skillet 12in",
+    "store": "Kitchen Corner",
+    "purchase_date": "2026-09-01",
+    "return_window_days": 45,
+    "price": 39.95,
+    "reason_for_potential_return": ""
+  },
+  {
+    "item": "Trail Running Shoes",
+    "store": "Peak Outfitters",
+    "purchase_date": "2026-09-05",
+    "return_window_days": 90,
+    "price": 128.0,
+    "reason_for_potential_return": ""
+  },
+  {
+    "item": "4K Streaming Stick",
+    "store": "MediaMart",
+    "purchase_date": "2026-08-11",
+    "return_window_days": 30,
+    "price": 49.99,
+    "reason_for_potential_return": ""
+  },
+  {
+    "item": "Mechanical Keyboard",
+    "store": "GadgetGo",
+    "purchase_date": "2026-08-13",
+    "return_window_days": 30,
+    "price": 89.99,
+    "reason_for_potential_return": ""
+  },
+  {
+    "item": "Cotton Bed Sheet Set (Queen)",
+    "store": "HomeThread",
+    "purchase_date": "2026-08-24",
+    "return_window_days": 15,
+    "price": 74.5,
+    "reason_for_potential_return": ""
+  },
+  {
+    "item": "Espresso Machine",
+    "store": "BrewWorks",
+    "purchase_date": "2026-08-09",
+    "return_window_days": 30,
+    "price": 249.0,
+    "reason_for_potential_return": ""
+  },
+  {
+    "item": "Standing Desk Converter",
+    "store": "WorkNest",
+    "purchase_date": "2026-08-08",
+    "return_window_days": 30,
+    "price": 129.0,
+    "reason_for_potential_return": ""
+  },
+  {
+    "item": "Fitness Tracker Watch",
+    "store": "GadgetGo",
+    "purchase_date": "2026-08-12",
+    "return_window_days": 30,
+    "price": 99.0,
+    "reason_for_potential_return": "Might return \u2014 not sure if I'll use it."
+  },
+  {
+    "item": "USB-C Charging Cable 3-pack",
+    "store": "GadgetGo",
+    "purchase_date": "2026-07-28",
+    "return_window_days": 30,
+    "price": 15.99,
+    "reason_for_potential_return": ""
+  },
+  {
+    "item": "Desk Lamp (LED)",
+    "store": "WorkNest",
+    "purchase_date": "2026-07-23",
+    "return_window_days": 30,
+    "price": 32.0,
+    "reason_for_potential_return": "Flickers intermittently \u2014 defective."
+  },
+  {
+    "item": "Bluetooth Speaker",
+    "store": "SoundHub",
+    "purchase_date": "2026-08-30",
+    "return_window_days": 30,
+    "price": 59.99,
+    "reason_for_potential_return": "Left channel crackles at high volume."
+  },
+  {
+    "item": "Winter Jacket (size L)",
+    "store": "TrailGear",
+    "purchase_date": "2026-08-27",
+    "return_window_days": 60,
+    "price": 189.0,
+    "reason_for_potential_return": "Too small \u2014 need size XL."
+  }
+]
